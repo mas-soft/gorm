@@ -3,6 +3,7 @@ package migrator
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -260,16 +261,16 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 
 // DropTable drop table for values
 func (m Migrator) DropTable(values ...interface{}) error {
-	values = m.ReorderModels(values, false)
-	for i := len(values) - 1; i >= 0; i-- {
-		tx := m.DB.Session(&gorm.Session{})
-		if err := m.RunWithValue(values[i], func(stmt *gorm.Statement) error {
-			return tx.Exec("DROP TABLE IF EXISTS ?", m.CurrentTable(stmt)).Error
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
+	// values = m.ReorderModels(values, false)
+	// for i := len(values) - 1; i >= 0; i-- {
+	// 	tx := m.DB.Session(&gorm.Session{})
+	// 	if err := m.RunWithValue(values[i], func(stmt *gorm.Statement) error {
+	// 		return tx.Exec("DROP TABLE IF EXISTS ?", m.CurrentTable(stmt)).Error
+	// 	}); err != nil {
+	// 		return err
+	// 	}
+	// }
+	return errors.New("Not Allowed to drop columns")
 }
 
 // HasTable returns table exists or not for value, value could be a struct or string
@@ -286,30 +287,31 @@ func (m Migrator) HasTable(value interface{}) bool {
 
 // RenameTable rename table from oldName to newName
 func (m Migrator) RenameTable(oldName, newName interface{}) error {
-	var oldTable, newTable interface{}
-	if v, ok := oldName.(string); ok {
-		oldTable = clause.Table{Name: v}
-	} else {
-		stmt := &gorm.Statement{DB: m.DB}
-		if err := stmt.Parse(oldName); err == nil {
-			oldTable = m.CurrentTable(stmt)
-		} else {
-			return err
-		}
-	}
+	// var oldTable, newTable interface{}
+	// if v, ok := oldName.(string); ok {
+	// 	oldTable = clause.Table{Name: v}
+	// } else {
+	// 	stmt := &gorm.Statement{DB: m.DB}
+	// 	if err := stmt.Parse(oldName); err == nil {
+	// 		oldTable = m.CurrentTable(stmt)
+	// 	} else {
+	// 		return err
+	// 	}
+	// }
 
-	if v, ok := newName.(string); ok {
-		newTable = clause.Table{Name: v}
-	} else {
-		stmt := &gorm.Statement{DB: m.DB}
-		if err := stmt.Parse(newName); err == nil {
-			newTable = m.CurrentTable(stmt)
-		} else {
-			return err
-		}
-	}
+	// if v, ok := newName.(string); ok {
+	// 	newTable = clause.Table{Name: v}
+	// } else {
+	// 	stmt := &gorm.Statement{DB: m.DB}
+	// 	if err := stmt.Parse(newName); err == nil {
+	// 		newTable = m.CurrentTable(stmt)
+	// 	} else {
+	// 		return err
+	// 	}
+	// }
 
-	return m.DB.Exec("ALTER TABLE ? RENAME TO ?", oldTable, newTable).Error
+	// return m.DB.Exec("ALTER TABLE ? RENAME TO ?", oldTable, newTable).Error
+	return errors.New("Not Allowed to RenameTable")
 }
 
 // AddColumn create `name` column for value
@@ -334,30 +336,34 @@ func (m Migrator) AddColumn(value interface{}, name string) error {
 
 // DropColumn drop value's `name` column
 func (m Migrator) DropColumn(value interface{}, name string) error {
-	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		if field := stmt.Schema.LookUpField(name); field != nil {
-			name = field.DBName
-		}
+	// return m.RunWithValue(value, func(stmt *gorm.Statement) error {
+	// 	if field := stmt.Schema.LookUpField(name); field != nil {
+	// 		name = field.DBName
+	// 	}
 
-		return m.DB.Exec(
-			"ALTER TABLE ? DROP COLUMN ?", m.CurrentTable(stmt), clause.Column{Name: name},
-		).Error
-	})
+	// 	return m.DB.Exec(
+	// 		"ALTER TABLE ? DROP COLUMN ?", m.CurrentTable(stmt), clause.Column{Name: name},
+	// 	).Error
+	// })
+	return errors.New("Not Allowed to DropColumn")
+
 }
 
 // AlterColumn alter value's `field` column' type based on schema definition
 func (m Migrator) AlterColumn(value interface{}, field string) error {
-	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		if field := stmt.Schema.LookUpField(field); field != nil {
-			fileType := m.FullDataTypeOf(field)
-			return m.DB.Exec(
-				"ALTER TABLE ? ALTER COLUMN ? TYPE ?",
-				m.CurrentTable(stmt), clause.Column{Name: field.DBName}, fileType,
-			).Error
+	// return m.RunWithValue(value, func(stmt *gorm.Statement) error {
+	// 	if field := stmt.Schema.LookUpField(field); field != nil {
+	// 		fileType := m.FullDataTypeOf(field)
+	// 		return m.DB.Exec(
+	// 			"ALTER TABLE ? ALTER COLUMN ? TYPE ?",
+	// 			m.CurrentTable(stmt), clause.Column{Name: field.DBName}, fileType,
+	// 		).Error
 
-		}
-		return fmt.Errorf("failed to look up field with name: %s", field)
-	})
+	// 	}
+	// 	return fmt.Errorf("failed to look up field with name: %s", field)
+	// })
+	return errors.New("Not Allowed to AlterColumn")
+
 }
 
 // HasColumn check has column `field` for value or not
@@ -381,25 +387,29 @@ func (m Migrator) HasColumn(value interface{}, field string) bool {
 
 // RenameColumn rename value's field name from oldName to newName
 func (m Migrator) RenameColumn(value interface{}, oldName, newName string) error {
-	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		if field := stmt.Schema.LookUpField(oldName); field != nil {
-			oldName = field.DBName
-		}
+	// return m.RunWithValue(value, func(stmt *gorm.Statement) error {
+	// 	if field := stmt.Schema.LookUpField(oldName); field != nil {
+	// 		oldName = field.DBName
+	// 	}
 
-		if field := stmt.Schema.LookUpField(newName); field != nil {
-			newName = field.DBName
-		}
+	// 	if field := stmt.Schema.LookUpField(newName); field != nil {
+	// 		newName = field.DBName
+	// 	}
 
-		return m.DB.Exec(
-			"ALTER TABLE ? RENAME COLUMN ? TO ?",
-			m.CurrentTable(stmt), clause.Column{Name: oldName}, clause.Column{Name: newName},
-		).Error
-	})
+	// 	return m.DB.Exec(
+	// 		"ALTER TABLE ? RENAME COLUMN ? TO ?",
+	// 		m.CurrentTable(stmt), clause.Column{Name: oldName}, clause.Column{Name: newName},
+	// 	).Error
+	// })
+	return errors.New("Not Allowed to RenameColumn")
+
 }
 
 // MigrateColumn migrate column
 func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnType gorm.ColumnType) error {
 	// found, smart migrate
+	return errors.New("Not Allowed to MigrateColumn")
+
 	fullDataType := strings.ToLower(m.DB.Migrator().FullDataTypeOf(field).SQL)
 	realDataType := strings.ToLower(columnType.DatabaseTypeName())
 
@@ -503,7 +513,9 @@ func (m Migrator) CreateView(name string, option gorm.ViewOption) error {
 
 // DropView drop view
 func (m Migrator) DropView(name string) error {
-	return gorm.ErrNotImplemented
+	// return gorm.ErrNotImplemented
+	return errors.New("Not Allowed to DropView")
+
 }
 
 func buildConstraint(constraint *schema.Constraint) (sql string, results []interface{}) {
@@ -599,15 +611,17 @@ func (m Migrator) CreateConstraint(value interface{}, name string) error {
 
 // DropConstraint drop constraint
 func (m Migrator) DropConstraint(value interface{}, name string) error {
-	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		constraint, chk, table := m.GuessConstraintAndTable(stmt, name)
-		if constraint != nil {
-			name = constraint.Name
-		} else if chk != nil {
-			name = chk.Name
-		}
-		return m.DB.Exec("ALTER TABLE ? DROP CONSTRAINT ?", clause.Table{Name: table}, clause.Column{Name: name}).Error
-	})
+	// return m.RunWithValue(value, func(stmt *gorm.Statement) error {
+	// 	constraint, chk, table := m.GuessConstraintAndTable(stmt, name)
+	// 	if constraint != nil {
+	// 		name = constraint.Name
+	// 	} else if chk != nil {
+	// 		name = chk.Name
+	// 	}
+	// 	return m.DB.Exec("ALTER TABLE ? DROP CONSTRAINT ?", clause.Table{Name: table}, clause.Column{Name: name}).Error
+	// })
+	return errors.New("Not Allowed to DropConstraint")
+
 }
 
 // HasConstraint check has constraint or not
@@ -692,13 +706,15 @@ func (m Migrator) CreateIndex(value interface{}, name string) error {
 
 // DropIndex drop index `name`
 func (m Migrator) DropIndex(value interface{}, name string) error {
-	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		if idx := stmt.Schema.LookIndex(name); idx != nil {
-			name = idx.Name
-		}
+	// return m.RunWithValue(value, func(stmt *gorm.Statement) error {
+	// 	if idx := stmt.Schema.LookIndex(name); idx != nil {
+	// 		name = idx.Name
+	// 	}
 
-		return m.DB.Exec("DROP INDEX ? ON ?", clause.Column{Name: name}, m.CurrentTable(stmt)).Error
-	})
+	// 	return m.DB.Exec("DROP INDEX ? ON ?", clause.Column{Name: name}, m.CurrentTable(stmt)).Error
+	// })
+	return errors.New("Not Allowed to DropIndex")
+
 }
 
 // HasIndex check has index `name` or not
